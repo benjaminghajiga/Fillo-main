@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { apiClient } from './api';
+import { apiClient, getErrorMessage } from './api';
 
 interface User {
   id: string;
@@ -30,11 +30,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
       const response = await apiClient.register(data);
       const { user, token } = response.data;
       apiClient.setToken(token);
-      // persist user and token for session restore
       localStorage.setItem('user', JSON.stringify(user));
       set({ user, token, loading: false });
     } catch (error: any) {
-      const message = error.response?.data?.error || 'Registration failed';
+      const message = getErrorMessage(error);
       set({ error: message, loading: false });
       throw error;
     }
@@ -49,7 +48,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       localStorage.setItem('user', JSON.stringify(user));
       set({ user, token, loading: false });
     } catch (error: any) {
-      const message = error.response?.data?.error || 'Login failed';
+      const message = getErrorMessage(error);
       set({ error: message, loading: false });
       throw error;
     }

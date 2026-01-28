@@ -1,28 +1,58 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosError } from 'axios';
 
-// Normalize API base URL so callers can provide either
-// - http://host:port
-// - http://host:port/api
-const _base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = _base.endsWith('/api')
-  ? _base
-  : _base.endsWith('/')
-  ? _base + 'api'
-  : _base + '/api';
+// SSR-safe function to get API base URL
+function getApiBaseUrl(): string {
+  const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  return base.endsWith('/api') ? base : base.endsWith('/') ? base + 'api' : base + '/api';
+}
+
+export interface ApiErrorResponse {
+  error: string;
+  details?: string;
+  code?: string;
+}
+
+export function getErrorMessage(error: any): string {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as ApiErrorResponse | undefined;
+    if (data?.error) {
+      return data.error;
+    }
+    if (error.response?.status === 409) {
+      return 'This email is already registered';
+    }
+    if (error.response?.status === 401) {
+      return 'Invalid credentials';
+    }
+    if (error.response?.status === 400) {
+      return 'Invalid input. Please check your entries';
+    }
+    if (error.response?.status === 500) {
+      return 'Server error. Please try again later';
+    }
+    if (error.message === 'Network Error') {
+      return 'Cannot connect to server. Is the backend running?';
+    }
+    return error.message || 'An error occurred';
+  }
+  return (error as Error)?.message || 'An unknown error occurred';
+}
 
 class ApiClient {
   private client: AxiosInstance;
   private token: string | null = null;
 
   constructor() {
+    const API_URL = getApiBaseUrl();
     this.client = axios.create({
       baseURL: API_URL,
       headers: {
         'Content-Type': 'application/json',
       },
+      timeout: 10000,
     });
 
-    // Add token to requests if available
+    // Request interceptor: add token if available
     this.client.interceptors.request.use((config) => {
       if (this.token) {
         config.headers.Authorization = `Bearer ${this.token}`;
@@ -30,7 +60,18 @@ class ApiClient {
       return config;
     });
 
-    // Load token from localStorage
+    // Response interceptor: handle auth errors
+    this.client.interceptors.response.use(
+      (response) => response,
+      (error: AxiosError) => {
+        if (error.response?.status === 401) {
+          this.clearToken();
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    // Load token from localStorage (client-side only)
     if (typeof window !== 'undefined') {
       this.token = localStorage.getItem('token');
     }

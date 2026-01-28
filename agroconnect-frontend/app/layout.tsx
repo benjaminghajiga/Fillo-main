@@ -5,7 +5,7 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'AgroConnect - Agricultural Marketplace',
+  title: 'Fillo - Agricultural Marketplace',
   description: 'Connect farmers with buyers. Trade agricultural produce with secure payments.',
 };
 
@@ -20,7 +20,7 @@ export default function RootLayout({
         <nav className="bg-green-600 text-white p-4">
           <div className="container mx-auto flex justify-between items-center">
             <a href="/" className="text-2xl font-bold">
-              🌾 AgroConnect
+              🌾 Fillo
             </a>
             <div className="flex gap-4">
               <a href="/" className="hover:text-green-100">Home</a>
@@ -34,7 +34,7 @@ export default function RootLayout({
         </main>
         <footer className="bg-gray-800 text-white p-6 mt-12">
           <div className="container mx-auto text-center">
-            <p>&copy; 2026 AgroConnect. Connecting farmers with buyers worldwide.</p>
+            <p>&copy; 2026 Fillo. Connecting farmers with buyers worldwide.</p>
           </div>
         </footer>
       </body>

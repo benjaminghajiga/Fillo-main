@@ -7,7 +7,7 @@ export default function Home() {
     <div className="container mx-auto py-12">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg p-12 mb-12">
-        <h1 className="text-5xl font-bold mb-4">Welcome to AgroConnect</h1>
+        <h1 className="text-5xl font-bold mb-4">Welcome to Fillo</h1>
         <p className="text-xl mb-8 max-w-2xl">
           The secure agricultural marketplace connecting real farmers with real buyers. 
           Trade agricultural produce with confidence using modern payment systems.
@@ -52,7 +52,7 @@ export default function Home() {
 
       {/* How It Works Section */}
       <div className="bg-white rounded-lg p-12 mb-12">
-        <h2 className="text-3xl font-bold mb-8 text-center">How AgroConnect Works</h2>
+        <h2 className="text-3xl font-bold mb-8 text-center">How Fillo Works</h2>
         <div className="grid md:grid-cols-4 gap-8">
           <div className="text-center">
             <div className="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 text-2xl font-bold text-green-600">
@@ -120,7 +120,7 @@ export default function Home() {
       <div className="text-center py-12">
         <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
         <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-          Join thousands of farmers and buyers on AgroConnect. Start trading agricultural 
+          Join thousands of farmers and buyers on Fillo. Start trading agricultural 
           products today with secure, flexible payments.
         </p>
         <Link href="/auth/register" className="btn-primary">
