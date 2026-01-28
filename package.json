@@ -1,0 +1,22 @@
+{
+  "name": "fillo",
+  "version": "1.0.0",
+  "description": "Fillo - Agricultural Marketplace Platform",
+  "private": true,
+  "scripts": {
+    "dev": "bash dev-setup.sh",
+    "setup": "bash setup.sh"
+  },
+  "workspaces": [
+    "agroconnect-backend",
+    "agroconnect-frontend"
+  ],
+  "keywords": [
+    "agriculture",
+    "marketplace",
+    "farmers",
+    "blockchain"
+  ],
+  "author": "",
+  "license": "MIT"
+}

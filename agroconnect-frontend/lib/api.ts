@@ -182,6 +182,23 @@ class ApiClient {
   async getPaymentStatus(paymentId: string) {
     return this.client.get(`/payments/${paymentId}`);
   }
+
+  // Earnings endpoints
+  async getFarmerEarnings() {
+    return this.client.get('/earnings');
+  }
+
+  async getEarningsStats() {
+    return this.client.get('/earnings/stats');
+  }
+
+  async getMonthlyEarnings() {
+    return this.client.get('/earnings/monthly');
+  }
+
+  async withdrawEarnings(amount: number) {
+    return this.client.post('/earnings/withdraw', { amount });
+  }
 }
 
 export const apiClient = new ApiClient();

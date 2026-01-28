@@ -23,6 +23,7 @@ model User {
   products      Product[]
   orders        Order[]
   payments      Payment[]
+  earnings      Earning[]
 }
 
 model FarmerProfile {
@@ -115,5 +116,23 @@ model Payment {
   @@index([orderId])
   @@index([userId])
   @@index([reference])
+  @@index([status])
+}
+
+model Earning {
+  id            String     @id @default(cuid())
+  farmerId      String
+  orderId       String
+  productId     String
+  amount        Float      // Total earnings from this order
+  quantitySold  Float
+  status        String     @default("PENDING") // PENDING, COMPLETED, WITHDRAWN
+  description   String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  farmer User @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+
+  @@index([farmerId])
   @@index([status])
 }

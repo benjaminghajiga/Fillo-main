@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# AgroConnect Development Setup and Launcher
+# Fillo Development Setup and Launcher
 # This script starts both backend and frontend with proper port allocation
 
 set -e
@@ -15,7 +15,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}🚀 AgroConnect Development Server Launcher${NC}"
+echo -e "${GREEN}🚀 Fillo Development Server Launcher${NC}"
 echo "============================================="
 echo ""
 

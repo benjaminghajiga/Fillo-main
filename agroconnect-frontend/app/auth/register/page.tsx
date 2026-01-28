@@ -312,7 +312,7 @@ export default function RegisterPage() {
   return (
     <div className="container mx-auto py-12 px-4">
       <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8">
-        <h1 className="text-3xl font-bold mb-2 text-center text-gray-900">Join AgroConnect</h1>
+        <h1 className="text-3xl font-bold mb-2 text-center text-gray-900">Join Fillo</h1>
         <p className="text-center text-gray-600 mb-8">Create your account in minutes</p>
         <Suspense fallback={<div className="text-center text-gray-500">Loading...</div>}>
           <RegisterForm />

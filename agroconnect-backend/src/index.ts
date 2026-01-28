@@ -5,6 +5,7 @@ import authRoutes from './routes/authRoutes';
 import productRoutes from './routes/productRoutes';
 import orderRoutes from './routes/orderRoutes';
 import paymentRoutes from './routes/paymentRoutes';
+import earningRoutes from './routes/earningRoutes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -32,6 +33,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/earnings', earningRoutes);
 
 // Error handlers
 app.use(notFoundHandler);
@@ -39,5 +41,5 @@ app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`AgroConnect backend running on port ${PORT} (${NODE_ENV})`);
+  console.log(`Fillo backend running on port ${PORT} (${NODE_ENV})`);
 });

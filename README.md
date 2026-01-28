@@ -1,10 +1,10 @@
-# AgroConnect - Agricultural Marketplace Platform
+# Fillo - Agricultural Marketplace Platform
 
 A production-ready platform connecting farmers with buyers for agricultural produce trading, featuring secure payments via bank transfers and blockchain (Stacks).
 
 ## Project Overview
 
-**AgroConnect** is a comprehensive agricultural marketplace that enables:
+**Fillo** is a comprehensive agricultural marketplace that enables:
 - ✅ Real farmers to list authentic agricultural products
 - ✅ Real buyers (companies) to purchase agricultural goods
 - ✅ Secure payment methods (traditional + blockchain)
@@ -102,6 +102,9 @@ agroconnect/
 - Manage product listings
 - View incoming orders
 - Track payment status
+- **💰 Track earnings in real-time** (NEW)
+- **📊 View detailed statistics and trends** (NEW)
+- **💳 Manage withdrawals** (NEW)
 - Receive funds via bank or blockchain
 
 ### 3. Buyer Features
@@ -140,10 +143,23 @@ Buyer → Smart Contract Escrow → Release/Refund → Farmer
 ### 6. Database Models
 - **User:** Email, role, password
 - **FarmerProfile:** Farm name, location, crops
+- **Earning:** 💰 NEW - Track farmer earnings (amount, status, date)
 - **BuyerProfile:** Company name, location
 - **Product:** Name, category, quantity, price
 - **Order:** Buyer, product, quantity, status
 - **Payment:** Order, type (bank/crypto), status, reference
+
+### 7. Earnings Tracking System ✨ NEW
+- **Real-time earnings dashboard** for farmers
+- **Statistics overview:**
+  - Total earnings across all sales
+  - Available balance to withdraw
+  - Pending earnings awaiting confirmation
+  - Total quantity sold
+- **Monthly performance breakdown** - Track trends over time
+- **Withdrawal system** - Safe, validated fund withdrawals
+- **Transaction history** - Complete sales record with status
+- **API endpoints** - Full REST API for earnings data
 
 ## API Endpoints
 
@@ -428,4 +444,4 @@ For deployment and technical issues, refer to:
 
 ---
 
-**AgroConnect** - Empowering farmers and buyers through secure digital commerce.
+**Fillo** - Empowering farmers and buyers through secure digital commerce.

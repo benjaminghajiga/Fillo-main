@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# AgroConnect Quick Setup Script
+# Fillo Quick Setup Script
 # This script sets up the development environment
 
 set -e
 
-echo "🚀 AgroConnect Development Setup"
+echo "🚀 Fillo Development Setup"
 echo "================================"
 echo ""
 

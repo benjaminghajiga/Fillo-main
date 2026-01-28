@@ -12,6 +12,7 @@ export default function FarmerDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -116,8 +117,16 @@ export default function FarmerDashboard() {
         ...(imageData && { image: imageData }),
       };
 
-      await apiClient.createProduct(payload);
-      setSuccess('Product added successfully!');
+      if (editingId) {
+        // Update existing product
+        await apiClient.updateProduct(editingId, payload);
+        setSuccess('Product updated successfully!');
+      } else {
+        // Create new product
+        await apiClient.createProduct(payload);
+        setSuccess('Product added successfully!');
+      }
+
       setFormData({
         name: '',
         description: '',
@@ -128,10 +137,11 @@ export default function FarmerDashboard() {
         image: null,
       });
       setImagePreview(null);
+      setEditingId(null);
       setShowForm(false);
       loadProducts();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to add product');
+      setError(err.response?.data?.error || 'Failed to save product');
     }
   };
 
@@ -147,13 +157,52 @@ export default function FarmerDashboard() {
     }
   };
 
+  const handleEdit = (product: Product) => {
+    setEditingId(product.id);
+    setFormData({
+      name: product.name,
+      description: product.description || '',
+      category: product.category,
+      quantity: product.quantity.toString(),
+      unit: product.unit,
+      pricePerUnit: product.pricePerUnit.toString(),
+      image: null,
+    });
+    setImagePreview(product.image || null);
+    setShowForm(true);
+    window.scrollTo(0, 0);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setFormData({
+      name: '',
+      description: '',
+      category: '',
+      quantity: '',
+      unit: 'kg',
+      pricePerUnit: '',
+      image: null,
+    });
+    setImagePreview(null);
+    setShowForm(false);
+  };
+
   if (loading) {
     return <div className="container mx-auto py-12 text-center">Loading...</div>;
   }
 
   return (
     <div className="container mx-auto py-12">
-      <h1 className="text-4xl font-bold mb-8">Farmer Dashboard</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold">Farmer Dashboard</h1>
+        <a
+          href="/farmer/earnings"
+          className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+        >
+          💰 View Earnings
+        </a>
+      </div>
 
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded text-error">
@@ -170,17 +219,23 @@ export default function FarmerDashboard() {
       <div className="mb-8 flex justify-between items-center">
         <h2 className="text-2xl font-bold">Your Products</h2>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            if (editingId) {
+              handleCancelEdit();
+            } else {
+              setShowForm(!showForm);
+            }
+          }}
           className="btn-primary"
         >
           {showForm ? 'Cancel' : '+ Add Product'}
         </button>
       </div>
 
-      {/* Add Product Form */}
+      {/* Add/Edit Product Form */}
       {showForm && (
         <div className="card mb-8">
-          <h3 className="text-xl font-bold mb-6">Add New Product</h3>
+          <h3 className="text-xl font-bold mb-6">{editingId ? 'Edit Product' : 'Add New Product'}</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="form-label">Product Name</label>
@@ -314,7 +369,7 @@ export default function FarmerDashboard() {
             </div>
 
             <button type="submit" className="w-full btn-primary">
-              Add Product
+              {editingId ? 'Update Product' : 'Add Product'}
             </button>
           </form>
         </div>
@@ -345,7 +400,13 @@ export default function FarmerDashboard() {
                 <p><strong>Status:</strong> {product.available ? '✓ Active' : '✗ Inactive'}</p>
               </div>
               <div className="flex gap-2">
-                <button className="flex-1 btn-secondary text-sm">Edit</button>
+                <button
+                  type="button"
+                  onClick={() => handleEdit(product)}
+                  className="flex-1 btn-secondary text-sm"
+                >
+                  Edit
+                </button>
                 <button
                   onClick={() => handleDelete(product.id)}
                   className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm"
