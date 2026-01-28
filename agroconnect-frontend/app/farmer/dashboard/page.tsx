@@ -19,8 +19,9 @@ export default function FarmerDashboard() {
     quantity: '',
     unit: 'kg',
     pricePerUnit: '',
-    image: '',
+    image: null as File | null,
   });
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -57,12 +58,54 @@ export default function FarmerDashboard() {
     }));
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select a valid image file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image size must be less than 5MB');
+        return;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        image: file,
+      }));
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setError('');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
     try {
+      let imageData: string | undefined;
+
+      // Convert image to base64 if provided
+      if (formData.image) {
+        imageData = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(formData.image!);
+        });
+      }
+
       const payload = {
         name: formData.name,
         description: formData.description,
@@ -70,7 +113,7 @@ export default function FarmerDashboard() {
         quantity: parseFloat(formData.quantity),
         unit: formData.unit,
         pricePerUnit: parseFloat(formData.pricePerUnit),
-        ...(formData.image && { image: formData.image }),
+        ...(imageData && { image: imageData }),
       };
 
       await apiClient.createProduct(payload);
@@ -82,8 +125,9 @@ export default function FarmerDashboard() {
         quantity: '',
         unit: 'kg',
         pricePerUnit: '',
-        image: '',
+        image: null,
       });
+      setImagePreview(null);
       setShowForm(false);
       loadProducts();
     } catch (err: any) {
@@ -224,15 +268,49 @@ export default function FarmerDashboard() {
             </div>
 
             <div>
-              <label className="form-label">Image URL (optional)</label>
-              <input
-                type="url"
-                name="image"
-                value={formData.image}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder="https://..."
-              />
+              <label className="form-label block text-sm font-medium text-gray-700 mb-2">Product Image (optional)</label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-500 transition">
+                <input
+                  type="file"
+                  id="image-upload"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+                <label htmlFor="image-upload" className="cursor-pointer">
+                  {imagePreview ? (
+                    <div className="space-y-2">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-32 h-32 object-cover mx-auto rounded"
+                      />
+                      <p className="text-sm text-green-600 font-semibold">Click to change image</p>
+                      <p className="text-xs text-gray-500">{formData.image?.name}</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <svg
+                        className="mx-auto h-12 w-12 text-gray-400"
+                        stroke="currentColor"
+                        fill="none"
+                        viewBox="0 0 48 48"
+                      >
+                        <path
+                          d="M28 8H12a4 4 0 00-4 4v20a4 4 0 004 4h24a4 4 0 004-4V20m-14-2h.01M32 20a4 4 0 11-8 0 4 4 0 018 0zM5 44h38"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <p className="text-sm font-medium text-gray-700">
+                        Click to upload or drag and drop
+                      </p>
+                      <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+                    </div>
+                  )}
+                </label>
+              </div>
             </div>
 
             <button type="submit" className="w-full btn-primary">
