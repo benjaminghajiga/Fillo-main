@@ -1,6 +1,14 @@
 import axios, { AxiosInstance } from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+// Normalize API base URL so callers can provide either
+// - http://host:port
+// - http://host:port/api
+const _base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = _base.endsWith('/api')
+  ? _base
+  : _base.endsWith('/')
+  ? _base + 'api'
+  : _base + '/api';
 
 class ApiClient {
   private client: AxiosInstance;

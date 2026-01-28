@@ -83,11 +83,14 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ error: error.errors });
+      // Convert Zod errors to a readable string message
+      const msg = error.errors.map((e) => e.message).join(', ');
+      res.status(400).json({ error: msg });
       return;
     }
     console.error('Register error:', error);
-    res.status(500).json({ error: 'Registration failed' });
+    const message = (error as any)?.message || 'Registration failed';
+    res.status(500).json({ error: message });
   }
 };
 
@@ -127,10 +130,12 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ error: error.errors });
+      const msg = error.errors.map((e) => e.message).join(', ');
+      res.status(400).json({ error: msg });
       return;
     }
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Login failed' });
+    const message = (error as any)?.message || 'Login failed';
+    res.status(500).json({ error: message });
   }
 };

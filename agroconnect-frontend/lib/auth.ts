@@ -30,6 +30,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
       const response = await apiClient.register(data);
       const { user, token } = response.data;
       apiClient.setToken(token);
+      // persist user and token for session restore
+      localStorage.setItem('user', JSON.stringify(user));
       set({ user, token, loading: false });
     } catch (error: any) {
       const message = error.response?.data?.error || 'Registration failed';
@@ -44,6 +46,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       const response = await apiClient.login(email, password);
       const { user, token } = response.data;
       apiClient.setToken(token);
+      localStorage.setItem('user', JSON.stringify(user));
       set({ user, token, loading: false });
     } catch (error: any) {
       const message = error.response?.data?.error || 'Login failed';
@@ -54,6 +57,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   logout: () => {
     apiClient.clearToken();
+    localStorage.removeItem('user');
     set({ user: null, token: null, error: null });
   },
 

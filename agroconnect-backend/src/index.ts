@@ -13,9 +13,11 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Middleware
 app.use(express.json());
+// Allow flexible CORS in development. In production set FRONTEND_URL to the exact origin.
+const FRONTEND_URL = process.env.FRONTEND_URL;
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: process.env.NODE_ENV === 'development' ? true : FRONTEND_URL,
     credentials: true,
   })
 );
