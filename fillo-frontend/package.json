@@ -1,5 +1,5 @@
 {
-  "name": "agroconnect-frontend",
+  "name": "fillo-frontend",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -14,7 +14,7 @@
     "@stacks/connect": "^7.0.0",
     "@stacks/transactions": "^6.13.0",
     "axios": "^1.6.5",
-    "next": "^14.0.4",
+    "next": "^16.1.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.50.0",

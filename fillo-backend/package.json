@@ -1,5 +1,5 @@
 {
-  "name": "agroconnect-backend",
+  "name": "fillo-backend",
   "version": "1.0.0",
   "description": "Fillo agricultural marketplace backend",
   "main": "dist/index.js",
