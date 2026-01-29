@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export',
   reactStrictMode: true,
   env: {
     NEXT_PUBLIC_API_URL: "https://resplendent-creativity-production.up.railway.app/api",
