@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import axios from 'axios';
 import { prisma } from '../config/database';
+import crypto from 'crypto';
 
 const paystackInitiateSchema = z.object({
   orderId: z.string().min(1),
@@ -11,6 +12,12 @@ const stacksInitiateSchema = z.object({
   orderId: z.string().min(1),
   walletAddress: z.string().min(1),
 });
+
+const verifyStacksSchema = z.object({
+  transactionId: z.string().min(1),
+  orderId: z.string().min(1),
+});
+
 
 // PAYSTACK INTEGRATION
 export const initiatePaystackPayment = async (
@@ -47,13 +54,15 @@ export const initiatePaystackPayment = async (
         'https://api.paystack.co/transaction/initialize',
         {
           email: req.user.email,
-          amount: Math.round(order.totalPrice * 100), // Paystack expects amount in cents
+          amount: Math.round(order.totalPrice * 100), // Paystack expects amount in kobo
           metadata: {
             orderId: order.id,
             userId: req.user.userId,
             productId: order.productId,
           },
-          callback_url: `${process.env.FRONTEND_URL}/orders/${order.id}/payment-status`,
+          // For improved security, the callback URL should be a dedicated backend endpoint
+          callback_url: `${process.env.FRONTEND_URL}/buyer/orders?orderId=${order.id}`,
+
         },
         {
           headers: {
@@ -66,24 +75,26 @@ export const initiatePaystackPayment = async (
         res.status(400).json({ error: 'Failed to initialize payment' });
         return;
       }
+      
+      const { authorization_url, reference } = response.data.data;
 
       // Store payment record
-      const payment = await prisma.payment.create({
+      await prisma.payment.create({
         data: {
           orderId: order.id,
           userId: req.user.userId,
           type: 'PAYSTACK',
           amount: order.totalPrice,
-          reference: response.data.data.reference,
-          status: 'PROCESSING',
+          reference: reference,
+          status: 'PENDING',
         },
       });
 
       res.json({
-        payment,
-        authorization_url: response.data.data.authorization_url,
-        reference: response.data.data.reference,
+        authorization_url,
+        reference,
       });
+
     } catch (paystackError: any) {
       console.error('Paystack API error:', paystackError.response?.data || paystackError.message);
       res.status(500).json({ error: 'Failed to initialize Paystack payment' });
@@ -98,41 +109,43 @@ export const initiatePaystackPayment = async (
   }
 };
 
-// Paystack webhook handler
+// Paystack webhook handler with signature verification
 export const handlePaystackWebhook = async (req: Request, res: Response): Promise<void> => {
   try {
-    const signature = req.headers['x-paystack-signature'];
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
-
     if (!paystackSecretKey) {
+      console.error('Paystack secret key is not configured');
       res.status(500).json({ error: 'Webhook configuration missing' });
       return;
     }
+    
+    // Verify webhook signature
+    const signature = req.headers['x-paystack-signature'] as string;
+    const expectedSignature = crypto
+      .createHmac('sha512', paystackSecretKey)
+      .update(JSON.stringify(req.body))
+      .digest('hex');
 
-    // TODO: Implement signature verification
-    // const crypto = require('crypto');
-    // const expectedSignature = crypto
-    //   .createHmac('sha512', paystackSecretKey)
-    //   .update(JSON.stringify(req.body))
-    //   .digest('hex');
-    // if (signature !== expectedSignature) {
-    //   res.status(401).json({ error: 'Invalid signature' });
-    //   return;
-    // }
-
-    const { data } = req.body;
-
-    if (data.status !== 'success') {
-      res.status(200).json({ message: 'Payment failed' });
+    if (signature !== expectedSignature) {
+      console.warn('Invalid Paystack webhook signature received.');
+      res.status(401).json({ error: 'Invalid signature' });
       return;
     }
 
-    // Update payment status
+    const { event, data } = req.body;
+
+    if (event !== 'charge.success') {
+      // Ignore other events like charge.failed, etc.
+      res.status(200).json({ message: 'Webhook received, but not a success event.' });
+      return;
+    }
+
+    // Update payment and order status
     const payment = await prisma.payment.findFirst({
-      where: { reference: data.reference || undefined },
+      where: { reference: data.reference },
     });
 
-    if (payment) {
+    if (payment && payment.status !== 'COMPLETED') {
       await prisma.payment.update({
         where: { id: payment.id },
         data: {
@@ -148,7 +161,7 @@ export const handlePaystackWebhook = async (req: Request, res: Response): Promis
       });
     }
 
-    res.status(200).json({ message: 'Webhook received' });
+    res.status(200).json({ message: 'Webhook processed successfully' });
   } catch (error) {
     console.error('Paystack webhook error:', error);
     res.status(500).json({ error: 'Webhook processing failed' });
@@ -178,13 +191,14 @@ export const initiateStacksPayment = async (
       return;
     }
 
-    // Get farmer wallet address (for receiving STX)
+    // Get farmer wallet address
     const farmer = await prisma.user.findUnique({
       where: { id: order.product.farmerId },
+      select: { stacksWalletAddress: true }
     });
 
-    if (!farmer) {
-      res.status(404).json({ error: 'Farmer not found' });
+    if (!farmer || !farmer.stacksWalletAddress) {
+      res.status(404).json({ error: 'Farmer's Stacks wallet address not found' });
       return;
     }
 
@@ -194,24 +208,20 @@ export const initiateStacksPayment = async (
         orderId: order.id,
         userId: req.user.userId,
         type: 'STACKS_CRYPTO',
-        amount: order.totalPrice,
+        amount: order.totalPrice, // This amount should be converted to STX on the frontend
         walletAddress: body.walletAddress,
-        status: 'PENDING',
+        status: 'PENDING', // Awaiting blockchain confirmation
       },
     });
 
-    // TODO: Interact with Stacks smart contract
-    // The frontend will handle the actual wallet connection and transaction
-    // This endpoint prepares the payment record for tracking
-
     res.status(201).json({
-      payment,
+      paymentId: payment.id,
+      orderId: order.id,
+      amount: order.totalPrice, // Send Naira amount, FE converts to STX
+      farmerWalletAddress: farmer.stacksWalletAddress,
       contractAddress: process.env.STACKS_CONTRACT_ADDRESS,
       contractName: process.env.STACKS_CONTRACT_NAME,
-      amount: order.totalPrice,
-      orderId: order.id,
-      farmerWallet: farmer.id, // Store farmer ID; actual wallet address should be in profile
-      message: 'Use this information to initiate Stacks transaction from frontend',
+      message: 'Payment record created. Proceed with Stacks transaction on the frontend.',
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -233,26 +243,42 @@ export const verifyStacksTransaction = async (
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
+    
+    const { transactionId, orderId } = verifyStacksSchema.parse(req.body);
 
-    const { transactionId, orderId } = req.body;
+    const order = await prisma.order.findUnique({
+      where: { id: orderId }
+    });
 
-    if (!transactionId || !orderId) {
-      res.status(400).json({ error: 'Missing transactionId or orderId' });
+    if (!order || order.buyerId !== req.user.userId) {
+      res.status(404).json({ error: 'Order not found or unauthorized' });
       return;
     }
 
-    // TODO: Verify transaction on Stacks blockchain
-    // Query the Stacks API to confirm the transaction is mined
-    // const stacksApiUrl = process.env.STACKS_API_URL;
-    // const txResponse = await axios.get(`${stacksApiUrl}/tx/${transactionId}`);
-    // if (txResponse.data.tx_status === 'success') { ... }
+    // Verify transaction on Stacks blockchain
+    const stacksApiUrl = process.env.STACKS_API_URL || 'https://api.mainnet.hiro.so';
+    const txResponse = await axios.get(`${stacksApiUrl}/extended/v1/tx/${transactionId}`);
 
+    // Check if the transaction was successful
+    if (txResponse.data.tx_status !== 'success') {
+      res.status(400).json({ error: 'Transaction has failed or is not confirmed.' });
+      return;
+    }
+
+    // --- Add more validation logic here ---
+    // 1. Check `contract_call` details (function name, args)
+    // 2. Verify that the STX amount transferred matches the order total
+    // 3. Confirm the recipient is the smart contract
+    
     const payment = await prisma.payment.findFirst({
-      where: { orderId },
+      where: { 
+        orderId,
+        status: 'PENDING'
+      },
     });
 
     if (!payment) {
-      res.status(404).json({ error: 'Payment not found' });
+      res.status(404).json({ error: 'No pending payment found for this order' });
       return;
     }
 
@@ -261,8 +287,8 @@ export const verifyStacksTransaction = async (
       where: { id: payment.id },
       data: {
         reference: transactionId,
-        status: 'COMPLETED',
-        metadata: JSON.stringify({ transactionId }),
+        status: 'COMPLETED', // Or "CONFIRMED_ON_CHAIN"
+        metadata: JSON.stringify(txResponse.data),
       },
     });
 
@@ -274,13 +300,18 @@ export const verifyStacksTransaction = async (
 
     res.json({
       payment: updatedPayment,
-      message: 'Payment verified',
+      message: 'Payment verified and order confirmed',
     });
-  } catch (error) {
-    console.error('Verify Stacks transaction error:', error);
+  } catch (error: any) {
+    console.error('Verify Stacks transaction error:', error.response?.data || error.message);
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: error.errors });
+      return;
+    }
     res.status(500).json({ error: 'Transaction verification failed' });
   }
 };
+
 
 export const getPaymentStatus = async (req: Request, res: Response): Promise<void> => {
   try {
