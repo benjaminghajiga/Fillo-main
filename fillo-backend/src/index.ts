@@ -18,7 +18,7 @@ app.use(express.json());
 const FRONTEND_URL = process.env.FRONTEND_URL;
 app.use(
   cors({
-    origin: process.env.NODE_ENV === 'development' ? true : FRONTEND_URL,
+    origin: true,
     credentials: true,
   })
 );
