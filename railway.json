@@ -1,0 +1,11 @@
+{
+  "build": {
+    "builder": "nixpacks",
+    "buildCommand": "cd fillo-backend && npm install && npm run build"
+  },
+  "deploy": {
+    "startCommand": "cd fillo-backend && npm start",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
+}

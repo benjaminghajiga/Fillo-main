@@ -119,16 +119,9 @@ export const handlePaystackWebhook = async (req: Request, res: Response): Promis
       return;
     }
     
-    // Verify webhook signature
-    const signature = req.headers['x-paystack-signature'] as string;
-    const expectedSignature = crypto
-      .createHmac('sha512', paystackSecretKey)
-      .update(JSON.stringify(req.body))
-      .digest('hex');
-
-    if (signature !== expectedSignature) {
-      console.warn('Invalid Paystack webhook signature received.');
-      res.status(401).json({ error: 'Invalid signature' });
+    const hash = crypto.createHmac('sha512', paystackSecretKey).update(JSON.stringify(req.body)).digest('hex');
+    if (hash !== req.headers['x-paystack-signature']) {
+      res.status(401).send('Unauthorized');
       return;
     }
 
@@ -198,7 +191,7 @@ export const initiateStacksPayment = async (
     });
 
     if (!farmer || !farmer.stacksWalletAddress) {
-      res.status(404).json({ error: 'Farmer's Stacks wallet address not found' });
+      res.status(404).json({ error: 'Farmer\'s Stacks wallet address not found' });
       return;
     }
 
